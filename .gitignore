@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dados em cache
+*.pkl
+*.cache
+data/
+
+# Logs
+*.log
+
+# Secrets - NÃO FAZER COMMIT
+.streamlit/secrets.toml
+config_local.py
+
+# Guias e documentação auxiliar
+GUIA_*.md
+INICIO_RAPIDO.md
+DEPLOY_SIMPLES.md
+README_DEPLOY.md
+preparar_deploy.ps1
+debug_status.py
+check_hash.py
+
+# Git
+.git/
