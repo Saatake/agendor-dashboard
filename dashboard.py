@@ -150,6 +150,19 @@ def render_kpis(analytics: AgendorAnalytics):
     time_to_close = analytics.calculate_average_time_to_close()
     growth = analytics.calculate_growth_trend()
     
+    # Resumo rápido do período
+    total_deals = len(analytics.df_deals)
+    won_deals = len(analytics.df_deals[analytics.df_deals['dealStatus'] == 'won']) if not analytics.df_deals.empty else 0
+    lost_deals = len(analytics.df_deals[analytics.df_deals['dealStatus'] == 'lost']) if not analytics.df_deals.empty else 0
+    ongoing_deals = len(analytics.df_deals[analytics.df_deals['dealStatus'] == 'ongoing']) if not analytics.df_deals.empty else 0
+    
+    st.info(f"""
+    📅 **Resumo do Período:** {total_deals} negócios totais | 
+    ✅ {won_deals} ganhos | ❌ {lost_deals} perdidos | 🔄 {ongoing_deals} em andamento
+    """)
+    
+    st.markdown("---")
+    
     # Container para receita (mais destaque)
     st.markdown("#### 💰 Receita")
     col1, col2, col3 = st.columns(3)
@@ -808,6 +821,13 @@ def main():
         st.markdown("---")
         st.subheader("📅 Filtro de Data")
         
+        # Escolher qual data usar
+        date_type = st.radio(
+            "Filtrar por:",
+            ["Data de Criação", "Data de Fechamento"],
+            help="Data de Criação = quando o negócio foi criado | Data de Fechamento = quando foi ganho ou perdido"
+        )
+        
         # Filtro de período
         date_filter = st.radio(
             "Período de análise:",
@@ -858,18 +878,20 @@ def main():
                 date_limit = pd.Timestamp(start_date, tz='UTC')
                 end_limit = pd.Timestamp(end_date, tz='UTC')
             
-            # Filtrar deals baseado na data de fechamento (wonAt ou lostAt) ou criação
+            # Filtrar deals baseado na data escolhida
             filtered_deals = []
             for deal in deals:
                 deal_date = None
                 
-                # Priorizar data de fechamento
-                if deal.get('wonAt'):
-                    deal_date = pd.Timestamp(deal['wonAt'])
-                elif deal.get('lostAt'):
-                    deal_date = pd.Timestamp(deal['lostAt'])
-                elif deal.get('createdAt'):
-                    deal_date = pd.Timestamp(deal['createdAt'])
+                # Usar a data escolhida pelo usuário
+                if date_type == "Data de Criação":
+                    if deal.get('createdAt'):
+                        deal_date = pd.Timestamp(deal['createdAt'])
+                else:  # Data de Fechamento
+                    if deal.get('wonAt'):
+                        deal_date = pd.Timestamp(deal['wonAt'])
+                    elif deal.get('lostAt'):
+                        deal_date = pd.Timestamp(deal['lostAt'])
                 
                 if deal_date:
                     if date_filter == "Personalizado":
