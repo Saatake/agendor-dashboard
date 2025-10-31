@@ -63,7 +63,7 @@ def create_kpi_sheet(wb, analytics: AgendorAnalytics):
     revenue = analytics.calculate_revenue_forecast()
     win_loss = analytics.calculate_win_loss_rate()
     time_to_close = analytics.calculate_average_time_to_close()
-    growth = analytics.calculate_growth_rate()
+    growth = analytics.calculate_growth_trend()
     
     # Criar DataFrame
     data = {
