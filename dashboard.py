@@ -896,68 +896,61 @@ def main():
     # Criar objeto de analytics com dados filtrados
     analytics = AgendorAnalytics(filtered_deals, users, funnels)
     
-    # ===== TABS PARA ORGANIZAR CONTEÚDO =====
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📊 Visão Geral",
-        "👥 Desempenho de Vendedores", 
-        "📈 Análises Avançadas",
-        "💡 Insights & Alertas",
-        "ℹ️ Sobre"
-    ])
+    # ===== CONTEÚDO PRINCIPAL - TUDO EM UMA PÁGINA =====
     
-    with tab1:
-        # KPIs principais
-        render_kpis(analytics)
-        
-        st.markdown("---")
-        
-        # Conversão de propostas
-        render_proposals_conversion(analytics)
-        
-        st.markdown("---")
-        
-        # Duas colunas: Top Customers e Top Segments
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            render_top_customers(analytics)
-        
-        with col2:
-            render_top_segments(analytics)
-        
-        st.markdown("---")
-        
-        # Funil de conversão
-        render_conversion_funnel(analytics)
+    # KPIs sempre visíveis no topo
+    render_kpis(analytics)
     
-    with tab2:
-        # Performance de vendedores
-        render_seller_performance(analytics)
-        
-        st.markdown("---")
-        
-        # Estimativas de performance
-        render_estimates(analytics)
+    st.markdown("---")
     
-    with tab3:
-        # Análise de receita
-        render_revenue_analysis(analytics)
-        
-        st.markdown("---")
-        
-        # Análise de tempo
-        render_time_analysis(analytics)
-        
-        st.markdown("---")
-        
-        # Análise de perdas
-        render_loss_analysis(analytics)
-    
-    with tab4:
-        # Insights automáticos
+    # Insights e Alertas (compacto, sempre visível)
+    with st.expander("💡 **Insights & Alertas**", expanded=True):
         render_insights(analytics)
     
-    with tab5:
+    st.markdown("---")
+    
+    # Conversão de propostas
+    render_proposals_conversion(analytics)
+    
+    st.markdown("---")
+    
+    # Top Customers e Segments lado a lado
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        render_top_customers(analytics)
+    
+    with col2:
+        render_top_segments(analytics)
+    
+    st.markdown("---")
+    
+    # Funil de conversão
+    with st.expander("🎯 **Funil de Conversão**", expanded=False):
+        render_conversion_funnel(analytics)
+    
+    st.markdown("---")
+    
+    # Performance de vendedores
+    with st.expander("👥 **Desempenho por Vendedor**", expanded=False):
+        render_seller_performance(analytics)
+        st.markdown("---")
+        render_estimates(analytics)
+    
+    st.markdown("---")
+    
+    # Análises avançadas
+    with st.expander("📈 **Análises Avançadas**", expanded=False):
+        render_revenue_analysis(analytics)
+        st.markdown("---")
+        render_time_analysis(analytics)
+        st.markdown("---")
+        render_loss_analysis(analytics)
+    
+    # Rodapé
+    st.markdown("---")
+    
+    with st.expander("ℹ️ **Sobre o Dashboard & Documentação**", expanded=False):
         st.markdown("## 📖 Sobre o Dashboard")
         
         st.markdown("""
@@ -967,54 +960,35 @@ def main():
         
         st.markdown("### 🎯 Principais Métricas")
         
-        with st.expander("📊 Taxa de Conversão"):
-            st.markdown("""
-            **O que é:** Percentual de negócios que avançam entre etapas do funil.
-            
-            **Como é calculado:** (Negócios que avançaram / Total de negócios na etapa anterior) × 100
-            
-            **Para que serve:** Identificar gargalos no processo de vendas.
-            """)
+        st.markdown("**📊 Taxa de Conversão**")
+        st.caption("""
+        Percentual de negócios que avançam entre etapas do funil.
+        Serve para identificar gargalos no processo de vendas.
+        """)
         
-        with st.expander("💰 Receita Ponderada"):
-            st.markdown("""
-            **O que é:** Receita ajustada pela probabilidade de fechamento baseada na etapa do funil.
-            
-            **Como é calculado:** Valor do negócio × (Posição da etapa / Total de etapas)
-            
-            **Para que serve:** Previsão mais realista de receita futura.
-            
-            **Exemplo:** Negócio de R$ 10.000 na etapa 2 de 4 = R$ 10.000 × (2/4) = R$ 5.000 ponderados
-            """)
+        st.markdown("**💰 Receita Ponderada**")
+        st.caption("""
+        Receita ajustada pela probabilidade de fechamento baseada na etapa do funil.
+        Exemplo: Negócio de R$ 10.000 na etapa 2 de 4 = R$ 10.000 × (2/4) = R$ 5.000 ponderados
+        """)
         
-        with st.expander("📉 Valor Perdido"):
-            st.markdown("""
-            **O que é:** Soma total do valor de todos os negócios perdidos.
-            
-            **Como é calculado:** Soma dos valores de todos os deals com status "Perdido"
-            
-            **Para que serve:** Identificar oportunidades perdidas e seu impacto financeiro.
-            """)
+        st.markdown("**📉 Valor Perdido**")
+        st.caption("""
+        Soma total do valor de todos os negócios perdidos.
+        Serve para identificar oportunidades perdidas e seu impacto financeiro.
+        """)
         
-        with st.expander("⏱️ Tempo Médio de Fechamento"):
-            st.markdown("""
-            **O que é:** Número médio de dias entre a criação e o fechamento de um negócio.
-            
-            **Como é calculado:** Média de (Data de fechamento - Data de criação) para negócios ganhos
-            
-            **Para que serve:** Entender a velocidade do ciclo de vendas.
-            """)
+        st.markdown("**⏱️ Tempo Médio de Fechamento**")
+        st.caption("""
+        Número médio de dias entre a criação e o fechamento de um negócio.
+        Ajuda a entender a velocidade do ciclo de vendas.
+        """)
         
-        with st.expander("🎯 Propostas por Venda"):
-            st.markdown("""
-            **O que é:** Quantas propostas são necessárias, em média, para fechar 1 venda.
-            
-            **Como é calculado:** 1 / Taxa de conversão
-            
-            **Para que serve:** Dimensionar esforço comercial necessário para atingir metas.
-            
-            **Exemplo:** Taxa de conversão de 50% = 2 propostas necessárias para 1 venda
-            """)
+        st.markdown("**🎯 Propostas por Venda**")
+        st.caption("""
+        Quantas propostas são necessárias, em média, para fechar 1 venda.
+        Serve para dimensionar esforço comercial necessário para atingir metas.
+        """)
         
         st.markdown("---")
         st.markdown("### 🔄 Atualização de Dados")
@@ -1028,9 +1002,6 @@ def main():
         st.markdown("""
         Em caso de dúvidas ou sugestões de melhorias, entre em contato com o time de TI.
         """)
-    
-    # Rodapé (sem créditos adicionais)
-    st.markdown("---")
 
 
 if __name__ == "__main__":
