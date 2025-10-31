@@ -128,23 +128,23 @@ def create_sellers_sheet(wb, analytics: AgendorAnalytics):
     """Cria aba de performance por vendedor com gráfico"""
     ws = wb.create_sheet("👥 Vendedores")
     
-    sellers_data = analytics.calculate_seller_performance()
+    sellers_df = analytics.calculate_seller_performance()
     
-    if not sellers_data:
+    if sellers_df.empty:
         ws['A1'] = "Sem dados de vendedores"
         return
     
-    # Criar DataFrame
+    # Criar DataFrame formatado para Excel
     data = []
-    for seller in sellers_data:
+    for _, seller in sellers_df.iterrows():
         data.append({
             'Vendedor': seller['vendedor'],
-            'Receita Total': seller['receita_total'],
-            'Negócios Ganhos': seller['negocios_ganhos'],
-            'Negócios Perdidos': seller['negocios_perdidos'],
+            'Receita Total': seller['valor_total'],
+            'Negócios Ganhos': seller['ganhos'],
+            'Negócios Perdidos': seller['perdidos'],
             'Taxa de Vitória (%)': seller['taxa_vitoria'],
             'Ticket Médio': seller['ticket_medio'],
-            'Tempo Médio (dias)': seller['tempo_medio_fechamento']
+            'Total Negócios': seller['total_negocios']
         })
     
     df = pd.DataFrame(data)
@@ -186,20 +186,20 @@ def create_top_customers_sheet(wb, analytics: AgendorAnalytics):
     """Cria aba de Top Clientes"""
     ws = wb.create_sheet("🏆 Top Clientes")
     
-    top_customers = analytics.calculate_top_customers(limit=20)
+    top_customers_df = analytics.calculate_top_customers(limit=20)
     
-    if not top_customers:
+    if top_customers_df.empty:
         ws['A1'] = "Sem dados de clientes"
         return
     
-    # Criar DataFrame
+    # Criar DataFrame formatado
     data = []
-    for customer in top_customers:
+    for _, customer in top_customers_df.iterrows():
         data.append({
             'Cliente': customer['cliente'],
             'Receita Total': customer['receita_total'],
-            'Quantidade de Negócios': customer['quantidade_negocios'],
-            'Ticket Médio': customer['ticket_medio']
+            'Quantidade de Negócios': customer['qtd_negocios'],
+            'Percentual': customer['percentual']
         })
     
     df = pd.DataFrame(data)
@@ -214,10 +214,10 @@ def create_top_customers_sheet(wb, analytics: AgendorAnalytics):
     apply_borders(ws, len(df) + 1, 4)
     auto_adjust_columns(ws, 4)
     
-    # Formatar valores monetários
+    # Formatar valores monetários e percentuais
     for row in range(2, len(df) + 2):
         ws[f'B{row}'].number_format = 'R$ #,##0.00'
-        ws[f'D{row}'].number_format = 'R$ #,##0.00'
+        ws[f'D{row}'].number_format = '0.00"%"'
     
     # Criar gráfico de pizza - Top 10
     pie = PieChart()
