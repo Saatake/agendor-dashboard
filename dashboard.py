@@ -198,23 +198,6 @@ def render_kpis(analytics: AgendorAnalytics):
             delta=f"R$ {growth.get('receita_ultimos_30_dias', 0):,.0f}",
             help="Crescimento de receita nos últimos 30 dias"
         )
-        )
-    
-    with col3:
-        st.metric(
-            label="Receita Ponderada",
-            value=f"R$ {revenue.get('receita_ponderada', 0):,.2f}",
-            help="Receita ajustada pela probabilidade de fechamento"
-        )
-    
-    with col4:
-        lost_analysis = analytics.analyze_lost_deals()
-        st.metric(
-            label="Valor Perdido",
-            value=f"R$ {lost_analysis.get('valor_perdido', 0):,.2f}",
-            delta=f"{lost_analysis.get('total_perdidos', 0)} negócios",
-            delta_color="inverse"
-        )
 
 
 def render_proposals_conversion(analytics: AgendorAnalytics):
