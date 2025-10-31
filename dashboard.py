@@ -821,7 +821,7 @@ def main():
         st.markdown("---")
         st.subheader("📅 Filtro de Período")
         
-        st.caption("Filtra negócios pela data de criação (quando foram iniciados)")
+        st.caption("Filtra negócios pela data de término (endTime) - equivalente ao filtro do Agendor")
         
         # Filtro de período
         date_filter = st.radio(
@@ -873,18 +873,28 @@ def main():
                 date_limit = pd.Timestamp(start_date)
                 end_limit = pd.Timestamp(end_date)
             
-            # Filtrar deals pela data de criação
+            # Filtrar deals pela data de término (endTime)
             filtered_deals = []
             for deal in deals:
-                if deal.get('createdAt'):
+                # Usar endTime se disponível, senão usar wonAt ou lostAt
+                end_date = None
+                if deal.get('endTime'):
+                    end_date = pd.Timestamp(deal['endTime'])
+                elif deal.get('wonAt'):
+                    end_date = pd.Timestamp(deal['wonAt'])
+                elif deal.get('lostAt'):
+                    end_date = pd.Timestamp(deal['lostAt'])
+                
+                if end_date:
                     # Converter para timestamp sem timezone para comparação consistente
-                    deal_date = pd.Timestamp(deal['createdAt']).tz_localize(None) if pd.Timestamp(deal['createdAt']).tz is not None else pd.Timestamp(deal['createdAt'])
+                    if end_date.tz is not None:
+                        end_date = end_date.tz_localize(None)
                     
                     if date_filter == "Personalizado":
-                        if date_limit <= deal_date <= end_limit:
+                        if date_limit <= end_date <= end_limit:
                             filtered_deals.append(deal)
                     else:
-                        if deal_date >= date_limit:
+                        if end_date >= date_limit:
                             filtered_deals.append(deal)
         
         # Filtro de vendedor
