@@ -28,23 +28,66 @@ st.set_page_config(
 # Sistema de autenticação
 require_auth()
 
-# CSS customizado
+# CSS customizado para melhorar visual
 st.markdown("""
     <style>
-    .main-metric {
-        background-color: #f0f2f6;
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
+    /* Melhorar espaçamento geral */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: bold;
+    
+    /* Títulos mais bonitos */
+    h1 {
         color: #1f77b4;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
     }
-    .metric-label {
-        font-size: 1rem;
-        color: #666;
+    
+    h2 {
+        color: #2c3e50;
+        font-weight: 500;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 0.5rem;
+    }
+    
+    h3 {
+        color: #34495e;
+        font-weight: 500;
+    }
+    
+    /* Cards de métricas mais bonitos */
+    [data-testid="stMetricValue"] {
+        font-size: 2rem;
+        font-weight: 600;
+    }
+    
+    /* Melhorar aparência das tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        background-color: white;
+        border-radius: 8px;
+        padding: 0px 20px;
+        font-weight: 500;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: #1f77b4;
+        color: white;
+    }
+    
+    /* Info boxes mais bonitos */
+    .stAlert {
+        border-radius: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -83,8 +126,7 @@ def render_header():
 
 
 def render_kpis(analytics: AgendorAnalytics):
-    """Renderiza KPIs principais"""
-    st.markdown("---")
+    """Renderiza KPIs principais de forma organizada"""
     st.subheader("📊 Indicadores Principais")
     
     # Calcular métricas
@@ -93,14 +135,44 @@ def render_kpis(analytics: AgendorAnalytics):
     time_to_close = analytics.calculate_average_time_to_close()
     growth = analytics.calculate_growth_trend()
     
-    # Linha 1: Métricas de conversão
+    # Container para receita (mais destaque)
+    st.markdown("#### 💰 Receita")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            label="Receita Confirmada (Ganhos)",
+            value=f"R$ {revenue.get('receita_confirmada', 0):,.0f}",
+            help="Soma de todos os negócios ganhos"
+        )
+    
+    with col2:
+        st.metric(
+            label="Receita Potencial (Em Aberto)",
+            value=f"R$ {revenue.get('receita_potencial', 0):,.0f}",
+            delta=f"{revenue.get('total_negocios_abertos', 0)} negócios",
+            help="Soma de todos os negócios em andamento"
+        )
+    
+    with col3:
+        st.metric(
+            label="Receita Ponderada",
+            value=f"R$ {revenue.get('receita_ponderada', 0):,.0f}",
+            help="Receita potencial ajustada pela probabilidade de fechamento"
+        )
+    
+    st.markdown("###")
+    
+    # Container para conversão
+    st.markdown("#### 🎯 Conversão e Performance")
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.metric(
             label="Taxa de Vitória",
             value=f"{win_loss.get('taxa_vitoria', 0):.1f}%",
-            delta=f"{win_loss.get('ganhos', 0)} ganhos"
+            delta=f"{win_loss.get('ganhos', 0)} ganhos",
+            help="Percentual de negócios ganhos vs total fechado"
         )
     
     with col2:
@@ -108,38 +180,24 @@ def render_kpis(analytics: AgendorAnalytics):
             label="Taxa de Perda",
             value=f"{win_loss.get('taxa_perda', 0):.1f}%",
             delta=f"{win_loss.get('perdidos', 0)} perdidos",
-            delta_color="inverse"
+            delta_color="inverse",
+            help="Percentual de negócios perdidos vs total fechado"
         )
     
     with col3:
         st.metric(
-            label="Tempo Médio p/ Fechar",
-            value=f"{time_to_close.get('tempo_medio_dias', 0):.0f} dias",
-            delta=f"Ganhos: {time_to_close.get('tempo_medio_ganhos', 0):.0f}d"
+            label="Tempo Médio p/ Ganhar",
+            value=f"{time_to_close.get('tempo_medio_ganhos', 0):.0f} dias",
+            help="Tempo médio entre criação e fechamento de negócios ganhos"
         )
     
     with col4:
         st.metric(
-            label="Crescimento (30 dias)",
+            label="Crescimento (30d)",
             value=f"{growth.get('crescimento_percentual', 0):.1f}%",
-            delta=f"R$ {growth.get('receita_ultimos_30_dias', 0):,.2f}"
+            delta=f"R$ {growth.get('receita_ultimos_30_dias', 0):,.0f}",
+            help="Crescimento de receita nos últimos 30 dias"
         )
-    
-    # Linha 2: Métricas de receita
-    st.markdown("###")
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric(
-            label="Receita Confirmada",
-            value=f"R$ {revenue.get('receita_confirmada', 0):,.2f}"
-        )
-    
-    with col2:
-        st.metric(
-            label="Receita Potencial",
-            value=f"R$ {revenue.get('receita_potencial', 0):,.2f}",
-            delta=f"{revenue.get('total_negocios_abertos', 0)} abertos"
         )
     
     with col3:
@@ -160,14 +218,13 @@ def render_kpis(analytics: AgendorAnalytics):
 
 
 def render_proposals_conversion(analytics: AgendorAnalytics):
-    """Renderiza métricas de conversão de propostas"""
-    st.markdown("---")
-    st.subheader("📊 Conversão de Propostas")
+    """Renderiza métricas de conversão de propostas de forma compacta"""
+    st.subheader("🎯 Eficiência de Conversão")
     
     proposals_data = analytics.calculate_proposals_per_sale()
     
     if proposals_data:
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             st.metric(
@@ -179,36 +236,19 @@ def render_proposals_conversion(analytics: AgendorAnalytics):
         with col2:
             st.metric(
                 label="Taxa de Conversão",
-                value=f"{proposals_data['taxa_conversao']:.1f}%"
+                value=f"{proposals_data['taxa_conversao']:.1f}%",
+                help="Percentual de negócios ganhos vs total fechado"
             )
         
         with col3:
+            # Mostrar relação visual
+            total_deals = proposals_data['total_propostas']
+            won_deals = proposals_data['total_vendas']
             st.metric(
-                label="Total de Propostas",
-                value=f"{proposals_data['total_propostas']:,}",
-                help="Negócios ganhos + perdidos (fechados)"
+                label="Negócios Analisados",
+                value=f"{total_deals:,}",
+                delta=f"{won_deals:,} ganhos ({proposals_data['taxa_conversao']:.1f}%)"
             )
-        
-        with col4:
-            st.metric(
-                label="Total de Vendas",
-                value=f"{proposals_data['total_vendas']:,}",
-                help="Negócios ganhos"
-            )
-        
-        # Explicação detalhada
-        if proposals_data['propostas_por_venda'] > 0:
-            st.info(f"""
-            **Interpretação:** Em média, são necessárias **{proposals_data['propostas_por_venda']:.1f} propostas** 
-            para fechar **1 venda**.
-            
-            Isso significa que a cada {int(proposals_data['propostas_por_venda'])} negócios criados 
-            (entre ganhos e perdidos), você consegue fechar aproximadamente 1 venda.
-            
-            - **Taxa de conversão:** {proposals_data['taxa_conversao']:.1f}%
-            - **Total de propostas analisadas:** {proposals_data['total_propostas']:,}
-            - **Total de vendas fechadas:** {proposals_data['total_vendas']:,}
-            """)
 
 def render_estimates(analytics: AgendorAnalytics):
     """Renderiza estimativas e previsões"""
@@ -330,9 +370,8 @@ def render_estimates(analytics: AgendorAnalytics):
 
 
 def render_top_customers(analytics: AgendorAnalytics):
-    """Renderiza análise dos 5 maiores clientes"""
-    st.markdown("---")
-    st.subheader("🏆 Top 5 Maiores Clientes")
+    """Renderiza análise dos 5 maiores clientes de forma compacta"""
+    st.markdown("#### 🏆 Top 5 Clientes")
     
     top_customers = analytics.calculate_top_customers(5)
     
@@ -340,44 +379,24 @@ def render_top_customers(analytics: AgendorAnalytics):
         st.info("Sem dados de clientes disponíveis")
         return
     
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        # Gráfico de barras horizontal
-        fig = go.Figure(go.Bar(
-            x=top_customers['receita_total'],
-            y=top_customers['cliente'],
-            orientation='h',
-            text=[f"R$ {v:,.2f}" for v in top_customers['receita_total']],
-            textposition='auto',
-            marker=dict(
-                color=top_customers['receita_total'],
-                colorscale='Blues',
-                showscale=False
-            ),
-            hovertemplate='<b>%{y}</b><br>Receita: R$ %{x:,.2f}<br>%{customdata}% do total<extra></extra>',
-            customdata=top_customers['percentual']
-        ))
+    # Tabela compacta com métricas
+    for idx, row in top_customers.iterrows():
+        col1, col2, col3 = st.columns([3, 2, 1])
         
-        fig.update_layout(
-            title='Receita por Cliente',
-            xaxis_title='Receita (R$)',
-            yaxis_title='',
-            height=400,
-            yaxis={'categoryorder': 'total ascending'}
-        )
+        with col1:
+            st.markdown(f"**{idx + 1}. {row['cliente']}**")
         
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        st.markdown("**💰 Participação na Receita**")
+        with col2:
+            st.markdown(f"R$ {row['receita_total']:,.0f}")
         
-        # Gráfico de pizza
-        fig_pie = go.Figure(go.Pie(
-            labels=top_customers['cliente'],
-            values=top_customers['percentual'],
-            hole=0.4,
-            textinfo='percent',
+        with col3:
+            st.markdown(f"**{row['percentual']:.1f}%**")
+        
+        # Barra de progresso visual
+        st.progress(row['percentual'] / 100)
+        
+        if idx < len(top_customers) - 1:
+            st.markdown("")  # Espaçamento
             hovertemplate='<b>%{label}</b><br>%{percent}<br>R$ %{customdata:,.2f}<extra></extra>',
             customdata=top_customers['receita_total']
         ))
@@ -402,9 +421,8 @@ def render_top_customers(analytics: AgendorAnalytics):
 
 
 def render_top_segments(analytics: AgendorAnalytics):
-    """Renderiza análise dos 5 maiores segmentos"""
-    st.markdown("---")
-    st.subheader("🎯 Top 5 Maiores Segmentos")
+    """Renderiza análise dos 5 maiores segmentos de forma compacta"""
+    st.markdown("#### 🎯 Top 5 Segmentos")
     
     top_segments = analytics.calculate_top_segments(5)
     
@@ -412,55 +430,24 @@ def render_top_segments(analytics: AgendorAnalytics):
         st.info("Sem dados de segmentos disponíveis")
         return
     
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        # Gráfico de barras
-        fig = go.Figure(go.Bar(
-            x=top_segments['segmento'],
-            y=top_segments['receita_total'],
-            text=[f"R$ {v:,.0f}" for v in top_segments['receita_total']],
-            textposition='auto',
-            marker=dict(
-                color=top_segments['receita_total'],
-                colorscale='Greens',
-                showscale=False
-            ),
-            hovertemplate='<b>%{x}</b><br>Receita: R$ %{y:,.2f}<br>%{customdata}% do total<extra></extra>',
-            customdata=top_segments['percentual']
-        ))
+    # Tabela compacta com métricas
+    for idx, row in top_segments.iterrows():
+        col1, col2, col3 = st.columns([3, 2, 1])
         
-        fig.update_layout(
-            title='Receita por Segmento',
-            xaxis_title='',
-            yaxis_title='Receita (R$)',
-            height=400,
-            xaxis={'categoryorder': 'total descending'}
-        )
+        with col1:
+            st.markdown(f"**{idx + 1}. {row['segmento']}**")
         
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        st.markdown("**📊 Distribuição de Segmentos**")
+        with col2:
+            st.markdown(f"R$ {row['receita_total']:,.0f}")
         
-        # Métricas dos top 3
-        for idx, row in top_segments.head(3).iterrows():
-            st.metric(
-                label=row['segmento'],
-                value=f"{row['percentual']:.1f}%",
-                delta=f"R$ {row['receita_total']:,.0f}"
-            )
+        with col3:
+            st.markdown(f"**{row['percentual']:.1f}%**")
         
-        # Somatório dos top 5
-        total_top5_percent = top_segments['percentual'].sum()
-        st.markdown("---")
-        st.metric(
-            label="Top 5 Representam",
-            value=f"{total_top5_percent:.1f}%",
-            delta="do total de receita"
-        )
-    
-    # Tabela detalhada
+        # Barra de progresso visual
+        st.progress(row['percentual'] / 100)
+        
+        if idx < len(top_segments) - 1:
+            st.markdown("")  # Espaçamento
     st.markdown("### 📋 Detalhamento por Segmento")
     
     display_df = top_segments.copy()
@@ -861,35 +848,140 @@ def main():
         # Mostrar estatísticas dos filtros
         st.info(f"📊 **{len(filtered_deals)}** negócios filtrados de **{len(deals)}** totais")
         
-        st.markdown("---")
-        
         if st.button("🔄 Atualizar Dados", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
-        
-        st.markdown("---")
-        st.markdown("### 📖 Sobre as Métricas")
-        st.markdown("""
-        **Taxa de Conversão:** Percentual de negócios que avançam entre etapas
-        
-        **Receita Ponderada:** Receita ajustada pela probabilidade de fechamento
-        
-        **Tempo Médio:** Dias entre criação e fechamento do negócio
-        
-        **Taxa de Vitória:** % de negócios ganhos vs perdidos
-        """)
     
     # Criar objeto de analytics com dados filtrados
     analytics = AgendorAnalytics(filtered_deals, users, funnels)
     
-    # Renderizar seções
-    render_kpis(analytics)
-    render_proposals_conversion(analytics)
-    render_estimates(analytics)
-    render_top_customers(analytics)
-    render_top_segments(analytics)
-    render_conversion_funnel(analytics)
-    render_seller_performance(analytics)
+    # ===== TABS PARA ORGANIZAR CONTEÚDO =====
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Visão Geral",
+        "👥 Desempenho de Vendedores", 
+        "📈 Análises Avançadas",
+        "ℹ️ Sobre"
+    ])
+    
+    with tab1:
+        # KPIs principais
+        render_kpis(analytics)
+        
+        st.markdown("---")
+        
+        # Conversão de propostas
+        render_proposals_conversion(analytics)
+        
+        st.markdown("---")
+        
+        # Duas colunas: Top Customers e Top Segments
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            render_top_customers(analytics)
+        
+        with col2:
+            render_top_segments(analytics)
+        
+        st.markdown("---")
+        
+        # Funil de conversão
+        render_conversion_funnel(analytics)
+    
+    with tab2:
+        # Performance de vendedores
+        render_seller_performance(analytics)
+        
+        st.markdown("---")
+        
+        # Estimativas de performance
+        render_estimates(analytics)
+    
+    with tab3:
+        # Análise de receita
+        render_revenue_analysis(analytics)
+        
+        st.markdown("---")
+        
+        # Análise de tempo
+        render_time_analysis(analytics)
+        
+        st.markdown("---")
+        
+        # Análise de perdas
+        render_loss_analysis(analytics)
+    
+    with tab4:
+        st.markdown("## 📖 Sobre o Dashboard")
+        
+        st.markdown("""
+        Este dashboard foi desenvolvido para fornecer **insights gerenciais avançados** 
+        que não estão disponíveis diretamente no Agendor CRM.
+        """)
+        
+        st.markdown("### 🎯 Principais Métricas")
+        
+        with st.expander("📊 Taxa de Conversão"):
+            st.markdown("""
+            **O que é:** Percentual de negócios que avançam entre etapas do funil.
+            
+            **Como é calculado:** (Negócios que avançaram / Total de negócios na etapa anterior) × 100
+            
+            **Para que serve:** Identificar gargalos no processo de vendas.
+            """)
+        
+        with st.expander("💰 Receita Ponderada"):
+            st.markdown("""
+            **O que é:** Receita ajustada pela probabilidade de fechamento baseada na etapa do funil.
+            
+            **Como é calculado:** Valor do negócio × (Posição da etapa / Total de etapas)
+            
+            **Para que serve:** Previsão mais realista de receita futura.
+            
+            **Exemplo:** Negócio de R$ 10.000 na etapa 2 de 4 = R$ 10.000 × (2/4) = R$ 5.000 ponderados
+            """)
+        
+        with st.expander("📉 Valor Perdido"):
+            st.markdown("""
+            **O que é:** Soma total do valor de todos os negócios perdidos.
+            
+            **Como é calculado:** Soma dos valores de todos os deals com status "Perdido"
+            
+            **Para que serve:** Identificar oportunidades perdidas e seu impacto financeiro.
+            """)
+        
+        with st.expander("⏱️ Tempo Médio de Fechamento"):
+            st.markdown("""
+            **O que é:** Número médio de dias entre a criação e o fechamento de um negócio.
+            
+            **Como é calculado:** Média de (Data de fechamento - Data de criação) para negócios ganhos
+            
+            **Para que serve:** Entender a velocidade do ciclo de vendas.
+            """)
+        
+        with st.expander("🎯 Propostas por Venda"):
+            st.markdown("""
+            **O que é:** Quantas propostas são necessárias, em média, para fechar 1 venda.
+            
+            **Como é calculado:** 1 / Taxa de conversão
+            
+            **Para que serve:** Dimensionar esforço comercial necessário para atingir metas.
+            
+            **Exemplo:** Taxa de conversão de 50% = 2 propostas necessárias para 1 venda
+            """)
+        
+        st.markdown("---")
+        st.markdown("### 🔄 Atualização de Dados")
+        st.info("""
+        Os dados são atualizados em tempo real a partir da API do Agendor. 
+        Use o botão "🔄 Atualizar Dados" na barra lateral para forçar uma nova consulta.
+        """)
+        
+        st.markdown("---")
+        st.markdown("### 👨‍💻 Suporte")
+        st.markdown("""
+        Em caso de dúvidas ou sugestões de melhorias, entre em contato com o time de TI.
+        """)
     render_revenue_analysis(analytics)
     render_time_analysis(analytics)
     render_loss_analysis(analytics)
