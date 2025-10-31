@@ -15,6 +15,8 @@ from config import DASHBOARD_TITLE, PAGE_ICON, LAYOUT
 from agendor_client import AgendorClient
 from analytics import AgendorAnalytics
 from auth import require_auth, logout
+from metas_manager import get_meta_mes, set_meta_mes, calcular_progresso, calcular_projecao_mes
+import calendar
 
 
 # Configuração da página
@@ -775,6 +777,202 @@ def render_insights(analytics: AgendorAnalytics):
         st.info("✨ Tudo está funcionando bem! Não há alertas ou recomendações no momento.")
 
 
+def render_metas_progress(analytics: AgendorAnalytics):
+    """Renderiza progresso das metas do mês"""
+    st.subheader("🎯 Metas do Mês")
+    
+    # Pegar mês atual
+    now = datetime.now()
+    ano_mes = now.strftime("%Y-%m")
+    dia_atual = now.day
+    dias_no_mes = calendar.monthrange(now.year, now.month)[1]
+    
+    # Carregar metas
+    metas = get_meta_mes(ano_mes)
+    
+    # Calcular valores atuais
+    revenue = analytics.calculate_revenue_forecast()
+    win_loss = analytics.calculate_win_loss_rate()
+    
+    receita_atual = revenue.get('receita_confirmada', 0)
+    vendas_atual = win_loss.get('ganhos', 0)
+    
+    # Total de propostas (negócios em andamento + fechados)
+    propostas_atual = len(analytics.df_deals)
+    
+    # Novos clientes (clientes únicos com primeiro negócio no período)
+    # Simplificação: contar clientes únicos nos negócios ganhos
+    if not analytics.df_deals.empty and 'organization' in analytics.df_deals.columns:
+        novos_clientes = analytics.df_deals[analytics.df_deals['dealStatus'] == 'won']['organization'].apply(
+            lambda x: x.get('id') if isinstance(x, dict) else None
+        ).nunique()
+    else:
+        novos_clientes = 0
+    
+    # Linha 1: Receita e Vendas
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        progresso_receita = calcular_progresso(receita_atual, metas['receita'])
+        projecao_receita = calcular_projecao_mes(receita_atual, dia_atual, dias_no_mes)
+        
+        st.metric(
+            label="💰 Meta de Receita",
+            value=f"R$ {receita_atual:,.0f}",
+            delta=f"{progresso_receita:.0f}% da meta (R$ {metas['receita']:,.0f})"
+        )
+        
+        # Barra de progresso
+        st.progress(min(progresso_receita / 100, 1.0))
+        
+        # Projeção
+        if projecao_receita >= metas['receita']:
+            st.success(f"📈 Projeção: R$ {projecao_receita:,.0f} ({(projecao_receita/metas['receita']*100):.0f}% da meta)")
+        elif projecao_receita >= metas['receita'] * 0.8:
+            st.warning(f"📊 Projeção: R$ {projecao_receita:,.0f} ({(projecao_receita/metas['receita']*100):.0f}% da meta)")
+        else:
+            st.error(f"📉 Projeção: R$ {projecao_receita:,.0f} ({(projecao_receita/metas['receita']*100):.0f}% da meta)")
+    
+    with col2:
+        progresso_vendas = calcular_progresso(vendas_atual, metas['vendas'])
+        projecao_vendas = calcular_projecao_mes(vendas_atual, dia_atual, dias_no_mes)
+        
+        st.metric(
+            label="✅ Meta de Vendas",
+            value=f"{vendas_atual} vendas",
+            delta=f"{progresso_vendas:.0f}% da meta ({metas['vendas']} vendas)"
+        )
+        
+        # Barra de progresso
+        st.progress(min(progresso_vendas / 100, 1.0))
+        
+        # Projeção
+        if projecao_vendas >= metas['vendas']:
+            st.success(f"📈 Projeção: {projecao_vendas:.0f} vendas ({(projecao_vendas/metas['vendas']*100):.0f}% da meta)")
+        elif projecao_vendas >= metas['vendas'] * 0.8:
+            st.warning(f"📊 Projeção: {projecao_vendas:.0f} vendas ({(projecao_vendas/metas['vendas']*100):.0f}% da meta)")
+        else:
+            st.error(f"📉 Projeção: {projecao_vendas:.0f} vendas ({(projecao_vendas/metas['vendas']*100):.0f}% da meta)")
+    
+    st.markdown("---")
+    
+    # Linha 2: Propostas e Novos Clientes
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        progresso_propostas = calcular_progresso(propostas_atual, metas['propostas'])
+        
+        st.metric(
+            label="📝 Meta de Propostas",
+            value=f"{propostas_atual} propostas",
+            delta=f"{progresso_propostas:.0f}% da meta ({metas['propostas']} propostas)"
+        )
+        st.progress(min(progresso_propostas / 100, 1.0))
+    
+    with col4:
+        progresso_clientes = calcular_progresso(novos_clientes, metas['novos_clientes'])
+        
+        st.metric(
+            label="🆕 Meta de Novos Clientes",
+            value=f"{novos_clientes} clientes",
+            delta=f"{progresso_clientes:.0f}% da meta ({metas['novos_clientes']} clientes)"
+        )
+        st.progress(min(progresso_clientes / 100, 1.0))
+
+
+def render_configuracoes_metas():
+    """Renderiza aba de configuração de metas"""
+    st.subheader("⚙️ Configuração de Metas")
+    
+    st.markdown("""
+    Defina as metas mensais para acompanhar o progresso da equipe.
+    As alterações são salvas automaticamente e ficam disponíveis para todos os usuários.
+    """)
+    
+    # Seletor de mês
+    now = datetime.now()
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # Gerar lista de meses (3 meses passados + atual + 3 futuros)
+        meses_opcoes = []
+        for i in range(-3, 4):
+            data = datetime(now.year, now.month, 1)
+            if i != 0:
+                mes_num = now.month + i
+                ano = now.year
+                while mes_num > 12:
+                    mes_num -= 12
+                    ano += 1
+                while mes_num < 1:
+                    mes_num += 12
+                    ano -= 1
+                data = datetime(ano, mes_num, 1)
+            
+            mes_str = data.strftime("%Y-%m")
+            mes_label = data.strftime("%B/%Y").replace('January', 'Janeiro').replace('February', 'Fevereiro').replace('March', 'Março').replace('April', 'Abril').replace('May', 'Maio').replace('June', 'Junho').replace('July', 'Julho').replace('August', 'Agosto').replace('September', 'Setembro').replace('October', 'Outubro').replace('November', 'Novembro').replace('December', 'Dezembro')
+            
+            meses_opcoes.append((mes_str, mes_label))
+        
+        mes_selecionado = st.selectbox(
+            "Selecione o mês:",
+            options=[m[0] for m in meses_opcoes],
+            format_func=lambda x: dict(meses_opcoes)[x],
+            index=3  # Mês atual
+        )
+    
+    # Carregar metas do mês selecionado
+    metas_atuais = get_meta_mes(mes_selecionado)
+    
+    st.markdown("---")
+    st.markdown("### 📊 Definir Metas")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        receita = st.number_input(
+            "💰 Meta de Receita (R$)",
+            min_value=0.0,
+            value=float(metas_atuais['receita']),
+            step=10000.0,
+            format="%.2f"
+        )
+        
+        propostas = st.number_input(
+            "📝 Meta de Propostas",
+            min_value=0,
+            value=int(metas_atuais['propostas']),
+            step=5
+        )
+    
+    with col2:
+        vendas = st.number_input(
+            "✅ Meta de Vendas",
+            min_value=0,
+            value=int(metas_atuais['vendas']),
+            step=1
+        )
+        
+        novos_clientes = st.number_input(
+            "🆕 Meta de Novos Clientes",
+            min_value=0,
+            value=int(metas_atuais['novos_clientes']),
+            step=1
+        )
+    
+    st.markdown("---")
+    
+    if st.button("💾 Salvar Metas", type="primary", use_container_width=True):
+        success = set_meta_mes(mes_selecionado, receita, vendas, propostas, novos_clientes)
+        
+        if success:
+            st.success(f"✅ Metas de {dict(meses_opcoes)[mes_selecionado]} salvas com sucesso!")
+            st.balloons()
+        else:
+            st.error("❌ Erro ao salvar metas. Tente novamente.")
+
+
 def main():
     """Função principal do dashboard"""
     
@@ -915,12 +1113,13 @@ def main():
     analytics = AgendorAnalytics(filtered_deals, users, funnels)
     
     # ===== NAVEGAÇÃO POR ABAS =====
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📊 Visão Geral",
-        "🎯 Funil & Conversão",
+        "🎯 Metas & Objetivos",
+        "📈 Funil & Conversão",
         "👥 Vendedores",
-        "📈 Análises Avançadas",
-        "ℹ️ Sobre"
+        "� Análises Avançadas",
+        "⚙️ Configurações"
     ])
     
     # === ABA 1: VISÃO GERAL ===
@@ -949,26 +1148,35 @@ def main():
         with col2:
             render_top_segments(analytics)
     
-    # === ABA 2: FUNIL & CONVERSÃO ===
+    # === ABA 2: METAS & OBJETIVOS ===
     with tab2:
+        render_metas_progress(analytics)
+    
+    # === ABA 3: FUNIL & CONVERSÃO ===
+    with tab3:
         render_conversion_funnel(analytics)
     
-    # === ABA 3: VENDEDORES ===
-    with tab3:
+    # === ABA 4: VENDEDORES ===
+    with tab4:
         render_seller_performance(analytics)
         st.markdown("---")
         render_estimates(analytics)
     
-    # === ABA 4: ANÁLISES AVANÇADAS ===
-    with tab4:
+    # === ABA 5: ANÁLISES AVANÇADAS ===
+    with tab5:
         render_revenue_analysis(analytics)
         st.markdown("---")
         render_time_analysis(analytics)
         st.markdown("---")
         render_loss_analysis(analytics)
     
-    # === ABA 5: SOBRE ===
-    with tab5:
+    # === ABA 6: CONFIGURAÇÕES ===
+    with tab6:
+        render_configuracoes_metas()
+        
+        st.markdown("---")
+        st.markdown("---")
+        
         st.markdown("## 📖 Sobre o Dashboard")
         
         st.markdown("""
