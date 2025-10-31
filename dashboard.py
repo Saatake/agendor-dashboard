@@ -914,61 +914,61 @@ def main():
     # Criar objeto de analytics com dados filtrados
     analytics = AgendorAnalytics(filtered_deals, users, funnels)
     
-    # ===== CONTEÚDO PRINCIPAL - TUDO EM UMA PÁGINA =====
+    # ===== NAVEGAÇÃO POR ABAS =====
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "📊 Visão Geral",
+        "🎯 Funil & Conversão",
+        "👥 Vendedores",
+        "📈 Análises Avançadas",
+        "ℹ️ Sobre"
+    ])
     
-    # KPIs sempre visíveis no topo
-    render_kpis(analytics)
-    
-    st.markdown("---")
-    
-    # Insights e Alertas (compacto, sempre visível)
-    with st.expander("💡 **Insights & Alertas**", expanded=True):
+    # === ABA 1: VISÃO GERAL ===
+    with tab1:
+        render_kpis(analytics)
+        
+        st.markdown("---")
+        
+        # Insights e Alertas
+        st.subheader("💡 Insights & Alertas")
         render_insights(analytics)
+        
+        st.markdown("---")
+        
+        # Conversão de propostas
+        render_proposals_conversion(analytics)
+        
+        st.markdown("---")
+        
+        # Top Customers e Segments lado a lado
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            render_top_customers(analytics)
+        
+        with col2:
+            render_top_segments(analytics)
     
-    st.markdown("---")
-    
-    # Conversão de propostas
-    render_proposals_conversion(analytics)
-    
-    st.markdown("---")
-    
-    # Top Customers e Segments lado a lado
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        render_top_customers(analytics)
-    
-    with col2:
-        render_top_segments(analytics)
-    
-    st.markdown("---")
-    
-    # Funil de conversão
-    with st.expander("🎯 **Funil de Conversão**", expanded=False):
+    # === ABA 2: FUNIL & CONVERSÃO ===
+    with tab2:
         render_conversion_funnel(analytics)
     
-    st.markdown("---")
-    
-    # Performance de vendedores
-    with st.expander("👥 **Desempenho por Vendedor**", expanded=False):
+    # === ABA 3: VENDEDORES ===
+    with tab3:
         render_seller_performance(analytics)
         st.markdown("---")
         render_estimates(analytics)
     
-    st.markdown("---")
-    
-    # Análises avançadas
-    with st.expander("📈 **Análises Avançadas**", expanded=False):
+    # === ABA 4: ANÁLISES AVANÇADAS ===
+    with tab4:
         render_revenue_analysis(analytics)
         st.markdown("---")
         render_time_analysis(analytics)
         st.markdown("---")
         render_loss_analysis(analytics)
     
-    # Rodapé
-    st.markdown("---")
-    
-    with st.expander("ℹ️ **Sobre o Dashboard & Documentação**", expanded=False):
+    # === ABA 5: SOBRE ===
+    with tab5:
         st.markdown("## 📖 Sobre o Dashboard")
         
         st.markdown("""
