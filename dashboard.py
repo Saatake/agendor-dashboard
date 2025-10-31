@@ -1021,7 +1021,7 @@ def main():
         st.markdown("---")
         st.subheader("📅 Filtro de Período")
         
-        st.caption("Filtra negócios criados OU terminados no período selecionado")
+        st.caption("Filtra negócios pela data de término (igual ao filtro do Agendor)")
         
         # Filtro de período
         date_filter = st.radio(
@@ -1073,13 +1073,10 @@ def main():
                 date_limit = pd.Timestamp(start_date)
                 end_limit = pd.Timestamp(end_date)
             
-            # Filtrar deals pela data de término (endTime) ou criação (createdAt)
-            # Pega negócios que foram criados OU terminados no período
+            # Filtrar deals pela data de término (endTime) - IGUAL AO AGENDOR
             filtered_deals = []
             for deal in deals:
-                include_deal = False
-                
-                # Verificar data de término (endTime, wonAt ou lostAt)
+                # Usar endTime se disponível, senão usar wonAt ou lostAt
                 end_date = None
                 if deal.get('endTime'):
                     end_date = pd.Timestamp(deal['endTime'])
@@ -1088,29 +1085,17 @@ def main():
                 elif deal.get('lostAt'):
                     end_date = pd.Timestamp(deal['lostAt'])
                 
-                # Verificar data de criação
-                created_date = None
-                if deal.get('createdAt'):
-                    created_date = pd.Timestamp(deal['createdAt'])
-                
-                # Remover timezone
-                if end_date and end_date.tz is not None:
-                    end_date = end_date.tz_localize(None)
-                if created_date and created_date.tz is not None:
-                    created_date = created_date.tz_localize(None)
-                
-                # Verificar se está no período (por endTime ou createdAt)
-                if date_filter == "Personalizado":
-                    if (end_date and date_limit <= end_date <= end_limit) or \
-                       (created_date and date_limit <= created_date <= end_limit):
-                        include_deal = True
-                else:
-                    if (end_date and end_date >= date_limit) or \
-                       (created_date and created_date >= date_limit):
-                        include_deal = True
-                
-                if include_deal:
-                    filtered_deals.append(deal)
+                if end_date:
+                    # Converter para timestamp sem timezone para comparação consistente
+                    if end_date.tz is not None:
+                        end_date = end_date.tz_localize(None)
+                    
+                    if date_filter == "Personalizado":
+                        if date_limit <= end_date <= end_limit:
+                            filtered_deals.append(deal)
+                    else:
+                        if end_date >= date_limit:
+                            filtered_deals.append(deal)
         
         # Filtro de vendedor
         if "Todos" not in seller_filter and seller_filter:
