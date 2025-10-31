@@ -380,27 +380,6 @@ def render_top_customers(analytics: AgendorAnalytics):
         
         if idx < len(top_customers) - 1:
             st.markdown("")  # Espaçamento
-            hovertemplate='<b>%{label}</b><br>%{percent}<br>R$ %{customdata:,.2f}<extra></extra>',
-            customdata=top_customers['receita_total']
-        ))
-        
-        fig_pie.update_layout(
-            title='% do Total',
-            height=400,
-            showlegend=False
-        )
-        
-        st.plotly_chart(fig_pie, use_container_width=True)
-    
-    # Tabela detalhada
-    st.markdown("### 📋 Detalhamento")
-    
-    display_df = top_customers.copy()
-    display_df['receita_total'] = display_df['receita_total'].apply(lambda x: f"R$ {x:,.2f}")
-    display_df['percentual'] = display_df['percentual'].apply(lambda x: f"{x:.2f}%")
-    display_df.columns = ['Cliente', 'Receita Total', 'Qtd Negócios', '% do Total']
-    
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 
 def render_top_segments(analytics: AgendorAnalytics):
@@ -431,14 +410,6 @@ def render_top_segments(analytics: AgendorAnalytics):
         
         if idx < len(top_segments) - 1:
             st.markdown("")  # Espaçamento
-    st.markdown("### 📋 Detalhamento por Segmento")
-    
-    display_df = top_segments.copy()
-    display_df['receita_total'] = display_df['receita_total'].apply(lambda x: f"R$ {x:,.2f}")
-    display_df['percentual'] = display_df['percentual'].apply(lambda x: f"{x:.2f}%")
-    display_df.columns = ['Segmento', 'Receita Total', 'Qtd Negócios', '% do Total']
-    
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 
 def render_conversion_funnel(analytics: AgendorAnalytics):
@@ -474,7 +445,7 @@ def render_conversion_funnel(analytics: AgendorAnalytics):
             height=400
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="conversion_funnel_chart")
     
     with col2:
         st.markdown("**Taxas de Conversão**")
@@ -511,7 +482,7 @@ def render_seller_performance(analytics: AgendorAnalytics):
             color_continuous_scale='Blues'
         )
         fig.update_layout(showlegend=False, height=400)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="seller_revenue_chart")
     
     with col2:
         # Gráfico de taxa de vitória
@@ -525,7 +496,7 @@ def render_seller_performance(analytics: AgendorAnalytics):
             color_continuous_scale='Greens'
         )
         fig.update_layout(showlegend=False, height=400)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="seller_winrate_chart")
     
     # Tabela detalhada
     st.markdown("### 📋 Detalhamento por Vendedor")
@@ -579,7 +550,7 @@ def render_revenue_analysis(analytics: AgendorAnalytics):
                 height=400
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="revenue_monthly_chart")
         else:
             st.info("Sem dados de receita por período")
     
@@ -610,7 +581,7 @@ def render_revenue_analysis(analytics: AgendorAnalytics):
                 height=400
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="revenue_comparison_chart")
 
 
 def render_time_analysis(analytics: AgendorAnalytics):
@@ -648,7 +619,7 @@ def render_time_analysis(analytics: AgendorAnalytics):
                 height=400
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="time_to_close_chart")
     
     with col2:
         # Tempo por etapa
@@ -665,7 +636,7 @@ def render_time_analysis(analytics: AgendorAnalytics):
                 height=400
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="time_by_stage_chart")
         else:
             st.info("Sem dados de tempo por etapa")
 
