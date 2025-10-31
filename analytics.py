@@ -451,6 +451,36 @@ class AgendorAnalytics:
     
     # ===== ESTIMATIVAS E PREVISÕES =====
     
+    def calculate_proposals_per_sale(self) -> Dict:
+        # quantas propostas EM MÉDIA são necessárias para fechar 1 venda
+        if self.df_deals.empty:
+            return {}
+        
+        won_deals = self.df_deals[self.df_deals['dealStatus'] == 'won']
+        all_deals = self.df_deals[self.df_deals['dealStatus'].isin(['won', 'lost'])]
+        
+        if won_deals.empty or all_deals.empty:
+            return {
+                'propostas_por_venda': 0,
+                'taxa_conversao': 0,
+                'total_propostas': 0,
+                'total_vendas': 0
+            }
+        
+        # Taxa de conversão (ganhos / total fechado)
+        conversion_rate = len(won_deals) / len(all_deals)
+        
+        # Propostas necessárias para fechar 1 venda = 1 / taxa de conversão
+        # Ex: 50% conversão = 2 propostas para 1 venda
+        proposals_per_sale = 1 / conversion_rate if conversion_rate > 0 else 0
+        
+        return {
+            'propostas_por_venda': round(proposals_per_sale, 1),
+            'taxa_conversao': round(conversion_rate * 100, 2),
+            'total_propostas': len(all_deals),
+            'total_vendas': len(won_deals)
+        }
+    
     def calculate_proposals_for_target(self, target_revenue: float = 100000) -> Dict:
         # quantas propostas para atingir meta (ticket médio × taxa de conversão)
         if self.df_deals.empty:

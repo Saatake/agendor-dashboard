@@ -159,6 +159,57 @@ def render_kpis(analytics: AgendorAnalytics):
         )
 
 
+def render_proposals_conversion(analytics: AgendorAnalytics):
+    """Renderiza métricas de conversão de propostas"""
+    st.markdown("---")
+    st.subheader("📊 Conversão de Propostas")
+    
+    proposals_data = analytics.calculate_proposals_per_sale()
+    
+    if proposals_data:
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(
+                label="Propostas por Venda",
+                value=f"{proposals_data['propostas_por_venda']:.1f}",
+                help="Quantas propostas EM MÉDIA são necessárias para fechar 1 venda"
+            )
+        
+        with col2:
+            st.metric(
+                label="Taxa de Conversão",
+                value=f"{proposals_data['taxa_conversao']:.1f}%"
+            )
+        
+        with col3:
+            st.metric(
+                label="Total de Propostas",
+                value=f"{proposals_data['total_propostas']:,}",
+                help="Negócios ganhos + perdidos (fechados)"
+            )
+        
+        with col4:
+            st.metric(
+                label="Total de Vendas",
+                value=f"{proposals_data['total_vendas']:,}",
+                help="Negócios ganhos"
+            )
+        
+        # Explicação detalhada
+        if proposals_data['propostas_por_venda'] > 0:
+            st.info(f"""
+            **Interpretação:** Em média, são necessárias **{proposals_data['propostas_por_venda']:.1f} propostas** 
+            para fechar **1 venda**.
+            
+            Isso significa que a cada {int(proposals_data['propostas_por_venda'])} negócios criados 
+            (entre ganhos e perdidos), você consegue fechar aproximadamente 1 venda.
+            
+            - **Taxa de conversão:** {proposals_data['taxa_conversao']:.1f}%
+            - **Total de propostas analisadas:** {proposals_data['total_propostas']:,}
+            - **Total de vendas fechadas:** {proposals_data['total_vendas']:,}
+            """)
+
 def render_estimates(analytics: AgendorAnalytics):
     """Renderiza estimativas e previsões"""
     st.markdown("---")
@@ -833,6 +884,7 @@ def main():
     
     # Renderizar seções
     render_kpis(analytics)
+    render_proposals_conversion(analytics)
     render_estimates(analytics)
     render_top_customers(analytics)
     render_top_segments(analytics)
