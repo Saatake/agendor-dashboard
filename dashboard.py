@@ -859,7 +859,7 @@ def main():
         
         # Filtro de data
         if date_filter != "Todos os dados":
-            now = pd.Timestamp.now(tz='UTC')
+            now = pd.Timestamp.now()
             
             if date_filter == "Último mês":
                 date_limit = now - pd.Timedelta(days=30)
@@ -870,14 +870,15 @@ def main():
             elif date_filter == "Último ano":
                 date_limit = now - pd.Timedelta(days=365)
             elif date_filter == "Personalizado":
-                date_limit = pd.Timestamp(start_date, tz='UTC')
-                end_limit = pd.Timestamp(end_date, tz='UTC')
+                date_limit = pd.Timestamp(start_date)
+                end_limit = pd.Timestamp(end_date)
             
             # Filtrar deals pela data de criação
             filtered_deals = []
             for deal in deals:
                 if deal.get('createdAt'):
-                    deal_date = pd.Timestamp(deal['createdAt'])
+                    # Converter para timestamp sem timezone para comparação consistente
+                    deal_date = pd.Timestamp(deal['createdAt']).tz_localize(None) if pd.Timestamp(deal['createdAt']).tz is not None else pd.Timestamp(deal['createdAt'])
                     
                     if date_filter == "Personalizado":
                         if date_limit <= deal_date <= end_limit:
