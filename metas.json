@@ -1,7 +1,7 @@
 {
   "2025-10": {
-    "receita": 150000,
-    "vendas": 15,
+    "receita": 150000.0,
+    "vendas": 10,
     "propostas": 50,
     "novos_clientes": 5
   },

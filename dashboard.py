@@ -16,7 +16,9 @@ from agendor_client import AgendorClient
 from analytics import AgendorAnalytics
 from auth import require_auth, logout
 from metas_manager import get_meta_mes, set_meta_mes, calcular_progresso, calcular_projecao_mes
+from excel_export import generate_excel_report
 import calendar
+from datetime import datetime
 
 
 # Configuração da página
@@ -1119,6 +1121,33 @@ def main():
         
         # Mostrar estatísticas dos filtros
         st.info(f"📊 **{len(filtered_deals)}** negócios filtrados de **{len(deals)}** totais")
+        
+        st.markdown("---")
+        
+        # Botão de exportar para Excel
+        st.subheader("📥 Exportar Relatório")
+        
+        if st.button("📊 Gerar Relatório Excel", use_container_width=True, type="primary"):
+            with st.spinner("Gerando relatório Excel..."):
+                # Criar analytics temporário para gerar o relatório
+                temp_analytics = AgendorAnalytics(filtered_deals, users, funnels)
+                excel_buffer = generate_excel_report(temp_analytics)
+                
+                # Criar nome do arquivo com data
+                filename = f"relatorio_agendor_{datetime.now().strftime('%Y-%m-%d_%H%M')}.xlsx"
+                
+                st.download_button(
+                    label="⬇️ Baixar Relatório Excel",
+                    data=excel_buffer,
+                    file_name=filename,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+                
+                st.success("✅ Relatório gerado com sucesso!")
+                st.caption("O arquivo contém: KPIs, Vendedores, Top Clientes, Funil com gráficos")
+        
+        st.markdown("---")
         
         if st.button("🔄 Atualizar Dados", use_container_width=True):
             st.cache_data.clear()
