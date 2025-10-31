@@ -690,6 +690,78 @@ def render_loss_analysis(analytics: AgendorAnalytics):
         )
 
 
+def render_insights(analytics: AgendorAnalytics):
+    """Renderiza insights automáticos e alertas"""
+    st.subheader("💡 Insights Automáticos & Alertas")
+    
+    st.markdown("""
+    Esta seção analisa automaticamente seus dados e identifica:
+    - 🚨 **Alertas** que precisam de atenção imediata
+    - ✅ **Destaques** positivos do seu desempenho
+    - 📊 **Comparações** entre vendedores e períodos
+    - 💡 **Recomendações** de ações práticas
+    """)
+    
+    insights = analytics.generate_insights()
+    
+    # 1. ALERTAS (coisas que precisam atenção)
+    if insights['alerts']:
+        st.markdown("---")
+        st.markdown("### 🚨 Alertas - Precisa de Atenção")
+        
+        for alert in insights['alerts']:
+            if alert['type'] == 'danger':
+                st.error(f"**{alert['title']}**\n\n{alert['message']}")
+                if 'recommendation' in alert:
+                    st.info(f"💡 **Recomendação:** {alert['recommendation']}")
+            elif alert['type'] == 'warning':
+                st.warning(f"**{alert['title']}**\n\n{alert['message']}")
+                if 'recommendation' in alert:
+                    st.info(f"💡 **Recomendação:** {alert['recommendation']}")
+    
+    # 2. DESTAQUES (coisas positivas)
+    if insights['highlights']:
+        st.markdown("---")
+        st.markdown("### ✅ Destaques Positivos")
+        
+        for highlight in insights['highlights']:
+            if highlight['type'] == 'success':
+                st.success(f"**{highlight['title']}**\n\n{highlight['message']}")
+                if 'detail' in highlight:
+                    st.caption(highlight['detail'])
+            elif highlight['type'] == 'info':
+                st.info(f"**{highlight['title']}**\n\n{highlight['message']}")
+                if 'detail' in highlight:
+                    st.caption(highlight['detail'])
+    
+    # 3. COMPARAÇÕES
+    if insights['comparisons']:
+        st.markdown("---")
+        st.markdown("### 📊 Comparações e Análises")
+        
+        for comp in insights['comparisons']:
+            with st.expander(f"**{comp['title']}**"):
+                st.markdown(comp['message'])
+                if 'detail' in comp:
+                    st.caption(comp['detail'])
+    
+    # 4. RECOMENDAÇÕES
+    if insights['recommendations']:
+        st.markdown("---")
+        st.markdown("### 💡 Recomendações de Ações")
+        
+        for rec in insights['recommendations']:
+            with st.container():
+                st.markdown(f"**{rec['title']}**")
+                st.markdown(f"📌 {rec['message']}")
+                st.markdown(f"➡️ **Ação sugerida:** {rec['action']}")
+                st.markdown("")
+    
+    # Mensagem se não houver insights
+    if not any([insights['alerts'], insights['highlights'], insights['comparisons'], insights['recommendations']]):
+        st.info("✨ Tudo está funcionando bem! Não há alertas ou recomendações no momento.")
+
+
 def main():
     """Função principal do dashboard"""
     
@@ -825,10 +897,11 @@ def main():
     analytics = AgendorAnalytics(filtered_deals, users, funnels)
     
     # ===== TABS PARA ORGANIZAR CONTEÚDO =====
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📊 Visão Geral",
         "👥 Desempenho de Vendedores", 
         "📈 Análises Avançadas",
+        "💡 Insights & Alertas",
         "ℹ️ Sobre"
     ])
     
@@ -881,6 +954,10 @@ def main():
         render_loss_analysis(analytics)
     
     with tab4:
+        # Insights automáticos
+        render_insights(analytics)
+    
+    with tab5:
         st.markdown("## 📖 Sobre o Dashboard")
         
         st.markdown("""

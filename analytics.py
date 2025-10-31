@@ -576,3 +576,127 @@ class AgendorAnalytics:
             'recorrencia_media': round(avg_deals_per_customer, 2),
             'interpretacao': f"Em média {int(estimated_visits)} visitas em {round(avg_days_to_close, 0)} dias"
         }
+    
+    # ===== INSIGHTS AUTOMÁTICOS =====
+    
+    def generate_insights(self) -> Dict:
+        """Gera insights automáticos e alertas baseados nos dados"""
+        insights = {
+            'alerts': [],
+            'highlights': [],
+            'comparisons': [],
+            'recommendations': []
+        }
+        
+        if self.df_deals.empty:
+            return insights
+        
+        # 1. ALERTAS - Coisas que precisam de atenção
+        
+        # Alerta: Taxa de conversão baixa
+        win_loss = self.calculate_win_loss_rate()
+        if win_loss.get('taxa_vitoria', 0) < 30:
+            insights['alerts'].append({
+                'type': 'warning',
+                'title': '⚠️ Taxa de Vitória Baixa',
+                'message': f"Sua taxa de vitória está em {win_loss.get('taxa_vitoria', 0):.1f}%. Isso significa que a cada 10 propostas, apenas {int(win_loss.get('taxa_vitoria', 0)/10)} fecham.",
+                'recommendation': 'Revise o perfil dos clientes abordados e qualifique melhor os leads antes de criar propostas.'
+            })
+        
+        # Alerta: Muitos negócios perdidos
+        lost_data = self.analyze_lost_deals()
+        total_closed = win_loss.get('total_fechados', 0)
+        if total_closed > 0 and lost_data.get('total_perdidos', 0) / total_closed > 0.6:
+            insights['alerts'].append({
+                'type': 'danger',
+                'title': '🚨 Alta Taxa de Perda',
+                'message': f"{lost_data.get('total_perdidos', 0)} negócios perdidos de {total_closed} fechados ({lost_data.get('total_perdidos', 0)/total_closed*100:.1f}%)",
+                'recommendation': f"A etapa mais comum de perda é '{lost_data.get('etapa_mais_comum_perda', 'N/A')}'. Foque em melhorar essa etapa do processo."
+            })
+        
+        # Alerta: Tempo de fechamento alto
+        time_data = self.calculate_average_time_to_close()
+        if time_data.get('tempo_medio_ganhos', 0) > 90:
+            insights['alerts'].append({
+                'type': 'warning',
+                'title': '⏰ Ciclo de Venda Longo',
+                'message': f"Tempo médio para ganhar: {time_data.get('tempo_medio_ganhos', 0):.0f} dias (mais de 3 meses)",
+                'recommendation': 'Identifique gargalos no processo e considere ações para acelerar o fechamento.'
+            })
+        
+        # 2. DESTAQUES - Coisas positivas
+        
+        # Destaque: Crescimento positivo
+        growth = self.calculate_growth_trend()
+        if growth.get('crescimento_percentual', 0) > 10:
+            insights['highlights'].append({
+                'type': 'success',
+                'title': '📈 Crescimento Forte',
+                'message': f"Receita cresceu {growth.get('crescimento_percentual', 0):.1f}% nos últimos 30 dias",
+                'detail': f"De R$ {growth.get('receita_30_dias_anteriores', 0):,.2f} para R$ {growth.get('receita_ultimos_30_dias', 0):,.2f}"
+            })
+        elif growth.get('crescimento_percentual', 0) < -10:
+            insights['alerts'].append({
+                'type': 'danger',
+                'title': '📉 Queda na Receita',
+                'message': f"Receita caiu {abs(growth.get('crescimento_percentual', 0)):.1f}% nos últimos 30 dias",
+                'recommendation': 'Analise o que mudou no último mês e tome ações corretivas.'
+            })
+        
+        # Destaque: Taxa de conversão boa
+        if win_loss.get('taxa_vitoria', 0) > 50:
+            insights['highlights'].append({
+                'type': 'success',
+                'title': '🎯 Excelente Conversão',
+                'message': f"Taxa de vitória de {win_loss.get('taxa_vitoria', 0):.1f}% está acima da média",
+                'detail': f"{win_loss.get('ganhos', 0)} vendas ganhas de {total_closed} propostas"
+            })
+        
+        # 3. COMPARAÇÕES - Entre vendedores
+        
+        seller_df = self.calculate_seller_performance()
+        if not seller_df.empty and len(seller_df) > 1:
+            # Top performer vs média
+            top_seller = seller_df.iloc[0]
+            avg_revenue = seller_df['valor_total'].mean()
+            
+            if top_seller['valor_total'] > avg_revenue * 2:
+                insights['comparisons'].append({
+                    'title': '🏆 Top Performer Destaque',
+                    'message': f"{top_seller['vendedor']} faturou R$ {top_seller['valor_total']:,.2f}, {top_seller['valor_total']/avg_revenue:.1f}x a média do time",
+                    'detail': f"Média do time: R$ {avg_revenue:,.2f}"
+                })
+            
+            # Vendedor com melhor taxa de conversão
+            best_converter = seller_df.loc[seller_df['taxa_vitoria'].idxmax()]
+            if best_converter['taxa_vitoria'] > 60:
+                insights['highlights'].append({
+                    'type': 'info',
+                    'title': '🎯 Melhor Taxa de Conversão',
+                    'message': f"{best_converter['vendedor']}: {best_converter['taxa_vitoria']:.1f}% de conversão",
+                    'detail': f"Aprenda com as técnicas de {best_converter['vendedor']} para melhorar o time"
+                })
+        
+        # 4. RECOMENDAÇÕES - Ações sugeridas
+        
+        # Recomendação: Foco nos top clientes
+        top_customers = self.calculate_top_customers(5)
+        if not top_customers.empty:
+            top5_percent = top_customers['percentual'].sum()
+            if top5_percent > 60:
+                insights['recommendations'].append({
+                    'title': '💼 Concentração de Clientes',
+                    'message': f"Top 5 clientes representam {top5_percent:.1f}% da receita",
+                    'action': 'Diversifique sua base de clientes para reduzir risco de dependência.'
+                })
+        
+        # Recomendação: Propostas necessárias para meta
+        proposals_data = self.calculate_proposals_per_sale()
+        if proposals_data:
+            insights['recommendations'].append({
+                'title': '📊 Eficiência de Conversão',
+                'message': f"São necessárias {proposals_data['propostas_por_venda']:.1f} propostas para fechar 1 venda",
+                'action': f"Para 10 vendas este mês, você precisa criar {proposals_data['propostas_por_venda']*10:.0f} propostas."
+            })
+        
+        return insights
