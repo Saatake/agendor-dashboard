@@ -78,11 +78,26 @@ st.markdown("""
         border-radius: 8px;
         padding: 0px 20px;
         font-weight: 500;
+        color: #2c3e50 !important;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #e8f4f8;
+        color: #1f77b4 !important;
     }
     
     .stTabs [aria-selected="true"] {
-        background-color: #1f77b4;
-        color: white;
+        background-color: #1f77b4 !important;
+        color: white !important;
+    }
+    
+    /* Garantir que o texto das tabs seja visível */
+    button[data-baseweb="tab"] {
+        color: #2c3e50 !important;
+    }
+    
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: white !important;
     }
     
     /* Info boxes mais bonitos */
