@@ -819,18 +819,13 @@ def main():
                 logout()
         
         st.markdown("---")
-        st.subheader("📅 Filtro de Data")
+        st.subheader("📅 Filtro de Período")
         
-        # Escolher qual data usar
-        date_type = st.radio(
-            "Filtrar por:",
-            ["Data de Criação", "Data de Fechamento"],
-            help="Data de Criação = quando o negócio foi criado | Data de Fechamento = quando foi ganho ou perdido"
-        )
+        st.caption("Filtra negócios pela data de criação (quando foram iniciados)")
         
         # Filtro de período
         date_filter = st.radio(
-            "Período de análise:",
+            "Selecione o período:",
             ["Todos os dados", "Último mês", "Últimos 3 meses", "Últimos 6 meses", "Último ano", "Personalizado"],
             index=0
         )
@@ -878,22 +873,12 @@ def main():
                 date_limit = pd.Timestamp(start_date, tz='UTC')
                 end_limit = pd.Timestamp(end_date, tz='UTC')
             
-            # Filtrar deals baseado na data escolhida
+            # Filtrar deals pela data de criação
             filtered_deals = []
             for deal in deals:
-                deal_date = None
-                
-                # Usar a data escolhida pelo usuário
-                if date_type == "Data de Criação":
-                    if deal.get('createdAt'):
-                        deal_date = pd.Timestamp(deal['createdAt'])
-                else:  # Data de Fechamento
-                    if deal.get('wonAt'):
-                        deal_date = pd.Timestamp(deal['wonAt'])
-                    elif deal.get('lostAt'):
-                        deal_date = pd.Timestamp(deal['lostAt'])
-                
-                if deal_date:
+                if deal.get('createdAt'):
+                    deal_date = pd.Timestamp(deal['createdAt'])
+                    
                     if date_filter == "Personalizado":
                         if date_limit <= deal_date <= end_limit:
                             filtered_deals.append(deal)
