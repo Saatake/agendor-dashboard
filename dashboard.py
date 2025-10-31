@@ -936,9 +936,6 @@ def main():
         st.markdown("""
         Em caso de dúvidas ou sugestões de melhorias, entre em contato com o time de TI.
         """)
-    render_revenue_analysis(analytics)
-    render_time_analysis(analytics)
-    render_loss_analysis(analytics)
     
     # Rodapé (sem créditos adicionais)
     st.markdown("---")
